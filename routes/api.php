@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LoanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +16,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 //routes: before authentication
-Route::group(['prefix' => '/v1'], function () {
+Route::group(['prefix' => '/v1','middleware' => ['auth:api']], function () {
+    Route::group(['prefix' => '/loan'], function () {
+        Route::get('/calculate', [LoanController::class, 'calculate']);
+        Route::post('/apply', [LoanController::class, 'apply']);
+    });
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

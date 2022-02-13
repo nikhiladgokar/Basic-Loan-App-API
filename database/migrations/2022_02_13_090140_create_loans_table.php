@@ -15,10 +15,12 @@ class CreateLoansTable extends Migration
     {
         Schema::create('loans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
-            $table->double('requested_amount')->nullable();
-            $table->double('rate_of_interest')->nullable();
-            $table->integer('duration')->comment('The length of the loan in weeks')->nullable();
+            $table->foreignId('user_id')->constrained()->onUpdate('cascade')->onDelete('cascade')->nullable();
+            $table->double('principal_ampunt')->nullable();
+            $table->double('interest_rate')->nullable();
+            $table->integer('tenure')->comment('The length of the loan in weeks')->nullable();
+            $table->double('total_repay_amount')->nullable();
+            $table->double('final_amount')->nullable();
             $table->string('status')->comment('APPROVAL_PENDING, APPROVED, REJECTED, COMPLETED')->nullable();
             $table->date('loan_applied_date')->nullable();
             $table->date('loan_accepted_date')->nullable();
