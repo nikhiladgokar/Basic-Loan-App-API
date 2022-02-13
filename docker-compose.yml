@@ -1,0 +1,41 @@
+version: "3.3"
+
+services:
+  nginx:
+    depends_on:
+      - php
+    build: ./docker/nginx/
+    container_name: loan-app-nginx
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www/html
+      - ${PWD}/docker/php/dbadmin.php:/var/www/html/public/dbadmin.php
+
+  mysql:
+    image: mysql:8.0
+    container_name: loan-app-mysql8
+    volumes:
+      - ${HOME}/docker/loan-app-mysql8:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: loan_app_dev
+
+  php:
+    depends_on:
+      - mysql
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+      args:
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    container_name: loan-app-php
+    volumes:
+      - ./:/var/www/html
+      - ${PWD}/docker/php/dbadmin.php:/var/www/html/public/dbadmin.php
+    expose:
+      - 9000
+    restart: always
+

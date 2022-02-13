@@ -7,7 +7,10 @@
         "watch-poll": "mix watch -- --watch-options-poll=1000",
         "hot": "mix watch --hot",
         "prod": "npm run production",
-        "production": "mix --production"
+        "production": "mix --production",
+        "docker:stop": "docker-compose down",
+        "docker:start": "docker-compose down && docker-compose up --build",
+        "docker:shell": "docker exec -it loan-app-php /bin/bash"
     },
     "devDependencies": {
         "axios": "^0.21",
