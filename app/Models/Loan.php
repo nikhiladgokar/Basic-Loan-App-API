@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,12 +25,12 @@ class Loan extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'principal_ampunt',
+        'principal_amount',
         'interest_rate',
         'tenure',
         'status',
         'total_repay_amount',
-        'final_amount',
+        'total_intrest',
         'loan_applied_date',
         'loan_accepted_date',
         'loan_rejected_date',
@@ -64,11 +65,9 @@ class Loan extends Model
      * @param $request object
      * @return $loanDeatils array
      */
-    public static function calculateLoan(){
-        $requestData=request()->all();
-        $principal = $requestData['amount'];
-        $rate = $requestData['interest_rate']/(12*100); //Monthly interest rate
-        $tenure = $requestData['tenure']; // Term in months
+    public static function calculateLoan($principal,$intrestRate,$tenure){
+
+        $rate = $intrestRate/(12*100); //Monthly interest rate
 
         $installmentAmount = $principal * $rate * (pow(1 + $rate, $tenure) / (pow(1 + $rate, $tenure) - 1));
         $totalRePayAmount = round(($installmentAmount * $tenure), 2);
@@ -76,12 +75,12 @@ class Loan extends Model
 
 
         $loanDetails=[
-            'principal_ampunt'=>$principal,
+            'principal_amount'=>$principal,
             'tenure'=>$tenure,
-            'interest_rate'=>$requestData['interest_rate'],
+            'interest_rate'=>$intrestRate,
             'installment_amount'=>round($installmentAmount,2),
             'total_repay_amount'=>$totalRePayAmount,
-            'final_amount'=>$totalInterest,
+            'total_intrest'=>$totalInterest,
         ];
 
         return $loanDetails;
@@ -94,20 +93,81 @@ class Loan extends Model
      */
     public static function storeLoanDetails(){
 
-        $loanDetails=self::calculateLoan();
+        $requestData=request()->all();
+        $loanDetails=self::calculateLoan($requestData['amount'],$requestData['interest_rate'],$requestData['tenure']);
+
         $loan= self::create([
-            'principal_ampunt'=>$loanDetails['principal_ampunt'],
+            'principal_amount'=>$loanDetails['principal_amount'],
             'interest_rate'=>$loanDetails['interest_rate'],
             'tenure'=>$loanDetails['tenure'],
             'total_repay_amount'=>$loanDetails['total_repay_amount'],
-            'final_amount'=>$loanDetails['final_amount'],
+            'total_intrest'=>$loanDetails['total_intrest'],
             'status'=>self::APPROVAL_PENDING,
-            'loan_applied_date'=>now(),
+            'loan_applied_date'=>Carbon::now(),
             'loan_agreement'=>request()->loan_agreement,
         ]);
 
         $loan->user_id=auth()->user()->id;
         $loan->save();
         return $loan;
+    }
+
+     /**
+     * Update loand status and store loan EMI details
+     *
+     * @param $loan object
+     * @return $loan object
+     */
+    public static function approveLoan($loan){
+
+        $result=DB::transaction(function () use ($loan) {
+
+            $loanDetails=self::calculateLoan($loan->principal_amount,$loan->interest_rate,$loan->tenure);
+
+            $loan->status = self::APPROVED;
+            $loan->loan_accepted_date = Carbon::now();
+            $loan->save();
+
+            $loanDueDate    = $loan->loan_accepted_date;
+
+            for($i=0; $i<$loan->tenure;$i++){
+                $loanDueDate = $loanDueDate->addMonth();
+                $installmentDetails=[
+                    'loan_id'=>$loan->id,
+                    'amount'=>$loanDetails['installment_amount'],
+                    'due_date'=>$loanDueDate
+                ];
+                LoanInstallment::storeLoanInstallment($installmentDetails);
+            }
+
+            return $loan;
+        });
+        return $result;
+    }
+
+     /**
+     * Update loan repayment details
+     *
+     * @param $loan object
+     * @return $result boolean
+     */
+    public static function repayLoanAmount($loan){
+
+        $result=DB::transaction(function () use ($loan) {
+
+            $installment=LoanInstallment::getLoanInstallment($loan->id);
+            $installment=LoanInstallment::updateLoanInstallment($installment);
+            $nextInstallment=LoanInstallment::getLoanInstallment($loan->id);
+
+            //::If no future installment pending marked loan completed
+            if(!$nextInstallment){
+                $loan->status = self::COMPLETED;
+                $loan->loan_completed_date = Carbon::now();
+                $loan->save();
+            }
+
+            return true;
+        });
+        return $result;
     }
 }

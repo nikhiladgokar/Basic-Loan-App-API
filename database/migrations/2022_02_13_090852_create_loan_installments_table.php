@@ -15,7 +15,7 @@ class CreateLoanInstallmentsTable extends Migration
     {
         Schema::create('loan_installments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('loan_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('loan_id')->constrained()->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->double('amount')->nullable();
             $table->date('due_date')->nullable();
             $table->date('paid_date')->nullable();

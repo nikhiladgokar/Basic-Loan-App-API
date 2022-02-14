@@ -20,6 +20,8 @@ Route::group(['prefix' => '/v1','middleware' => ['auth:api']], function () {
     Route::group(['prefix' => '/loan'], function () {
         Route::get('/calculate', [LoanController::class, 'calculate']);
         Route::post('/apply', [LoanController::class, 'apply']);
+        Route::post('/{loanId}/approve', [LoanController::class, 'approve']);
+        Route::post('/{loanId}/repay', [LoanController::class, 'repay']);
     });
 });
 

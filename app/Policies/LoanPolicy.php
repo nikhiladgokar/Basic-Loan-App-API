@@ -31,4 +31,15 @@ class LoanPolicy
     {
         return $user->hasRole('super-admin');
     }
+
+    /**
+     * Determine whether the user can repay loan.
+     *
+     * @param  \App\Models\User  $user
+     * @return mixed
+     */
+    public function canRepay(User $user,$loan)
+    {
+        return $user->hasRole('client') && $loan->user_id === $user->id;
+    }
 }
