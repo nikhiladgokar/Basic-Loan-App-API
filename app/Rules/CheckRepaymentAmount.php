@@ -35,7 +35,7 @@ class CheckRepaymentAmount implements Rule
         //::check installment pending or not
         if(!$installment){
             $this->isInstallmentPending= false;
-        }if($installment->amount == $value){
+        }elseif($installment->amount == $value){
             //::check provide amount is equal or not
             return true;
         }
