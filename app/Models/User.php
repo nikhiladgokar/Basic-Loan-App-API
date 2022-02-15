@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Loan;
 use App\Models\Address;
 use Laravel\Passport\HasApiTokens;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -82,6 +83,11 @@ class User extends Authenticatable
     public function address(): HasOne
     {
         return $this->hasOne(Address::class, 'user_id', 'id');
+    }
+
+    public function associatedRole()
+    {
+        return $this->belongsToMany(Role::class, 'model_has_roles', 'model_id', 'role_id');
     }
 
 }

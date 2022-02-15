@@ -22,6 +22,7 @@ Route::group(['prefix' => '/v1','middleware' => ['auth:api']], function () {
         Route::post('/apply', [LoanController::class, 'apply']);
         Route::post('/{loanId}/approve', [LoanController::class, 'approve']);
         Route::post('/{loanId}/repay', [LoanController::class, 'repay']);
+        Route::get('/{loanId}/details', [LoanController::class, 'show']);
     });
 });
 

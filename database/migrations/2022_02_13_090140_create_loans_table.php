@@ -21,6 +21,7 @@ class CreateLoansTable extends Migration
             $table->integer('tenure')->comment('The length of the loan in weeks')->nullable();
             $table->double('total_repay_amount')->nullable();
             $table->double('total_intrest')->nullable();
+            $table->text('transaction_id')->nullable();
             $table->string('status')->comment('APPROVAL_PENDING, APPROVED, REJECTED, COMPLETED')->nullable();
             $table->date('loan_applied_date')->nullable();
             $table->date('loan_accepted_date')->nullable();

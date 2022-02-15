@@ -50,7 +50,7 @@ class CheckRepaymentAmount implements Rule
     public function message()
     {
         if($this->isInstallmentPending){
-            return 'The installment amount did not match with provided amount.';
+            return 'The installment amount did not match with provided amount please check payment installment details.';
         }else{
             return 'There is no installment pending.';
         }

@@ -36,6 +36,7 @@ class Loan extends Model
         'loan_rejected_date',
         'loan_completed_date',
         'loan_agreement',
+        'transaction_id',
     ];
 
 
@@ -46,7 +47,7 @@ class Loan extends Model
      */
     public function installments(): HasMany
     {
-        return $this->hasMany(Installment::class, 'loan_id', 'id');
+        return $this->hasMany(LoanInstallment::class, 'loan_id', 'id');
     }
 
     /**
@@ -85,6 +86,7 @@ class Loan extends Model
 
         return $loanDetails;
     }
+
      /**
      * Store Loan Details in to Database
      * Client Request loan to admin
@@ -116,16 +118,18 @@ class Loan extends Model
      * Update loand status and store loan EMI details
      *
      * @param $loan object
+     * @param $paymentDetails array
      * @return $loan object
      */
-    public static function approveLoan($loan){
+    public static function approveLoan($loan,$paymentDetails){
 
-        $result=DB::transaction(function () use ($loan) {
+        $result=DB::transaction(function () use ($loan,$paymentDetails) {
 
             $loanDetails=self::calculateLoan($loan->principal_amount,$loan->interest_rate,$loan->tenure);
 
             $loan->status = self::APPROVED;
             $loan->loan_accepted_date = Carbon::now();
+            $loan->transaction_id = $paymentDetails['transaction_number'];
             $loan->save();
 
             $loanDueDate    = $loan->loan_accepted_date;
@@ -149,14 +153,15 @@ class Loan extends Model
      * Update loan repayment details
      *
      * @param $loan object
+     * @param $paymentDetails array
      * @return $result boolean
      */
-    public static function repayLoanAmount($loan){
+    public static function repayLoanAmount($loan,$paymentDetails){
 
-        $result=DB::transaction(function () use ($loan) {
+        $result=DB::transaction(function () use ($loan,$paymentDetails) {
 
             $installment=LoanInstallment::getLoanInstallment($loan->id);
-            $installment=LoanInstallment::updateLoanInstallment($installment);
+            $installment=LoanInstallment::updateLoanInstallment($installment,$paymentDetails);
             $nextInstallment=LoanInstallment::getLoanInstallment($loan->id);
 
             //::If no future installment pending marked loan completed

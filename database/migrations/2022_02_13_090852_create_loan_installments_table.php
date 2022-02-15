@@ -19,6 +19,7 @@ class CreateLoanInstallmentsTable extends Migration
             $table->double('amount')->nullable();
             $table->date('due_date')->nullable();
             $table->date('paid_date')->nullable();
+            $table->text('transaction_id')->nullable();
             $table->string('status')->comment('PAID, PENDING')->nullable();
             $table->timestamps();
         });

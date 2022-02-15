@@ -24,6 +24,7 @@ class LoanInstallment extends Model
         'due_date',
         'paid_date',
         'status',
+        'transaction_id'
     ];
 
     /**
@@ -63,10 +64,14 @@ class LoanInstallment extends Model
      * @param $installment object
      * @return $loanInstallment object
      */
-    public static function updateLoanInstallment($installment){
+    public static function updateLoanInstallment($installment,$paymentDetails=[]){
 
         $installment->status = self::PAID;
         $installment->paid_date = Carbon::now();
+
+        if(array_key_exists('transaction_number', $paymentDetails)){
+            $installment->transaction_id=$paymentDetails['transaction_number'];
+        }
         return $installment->save();
     }
 

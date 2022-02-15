@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Loan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Rules\CheckRepaymentAmount;
+use App\Payment\PaymentGatewayContract;
 use Illuminate\Support\Facades\Validator;
 
 class LoanController extends Controller
@@ -77,7 +79,7 @@ class LoanController extends Controller
      *
      * @param $loanId integer
      */
-    public function approve($loanId)
+    public function approve($loanId,PaymentGatewayContract $paymentGateway)
     {
         //::Only admin can apply loan
         $this->authorize('canApprove', Loan::class);
@@ -89,10 +91,20 @@ class LoanController extends Controller
             return response()->json(['message'=>"Loan request is already $loan->status."], 422);
         }
 
-        //::update loan details
-        $loan=Loan::approveLoan($loan);
+        //::Pay approved amount to client  using paymentgetway
+        $sender=auth()->user();
+        $reciver=User::where('id',$loan->user_id)->first();
+        $paymentDetails=$paymentGateway->charge($loan->principal_amount, $sender,$reciver);
 
+        //::if payment fails
+        if(!$paymentDetails['response']){
+            return response()->json(['message'=>"There is problem to process payment, please try after some time"], 500);
+        }
+
+        //::update loan details and payment details
+        $loan=Loan::approveLoan($loan,$paymentDetails);
         return response()->json(['message'=>'Loan request approved successfully!'], 200);
+
     }
 
 
@@ -103,7 +115,7 @@ class LoanController extends Controller
      * @param $amount integer
      * @return @json
      */
-    public function repay(Request $request,$loanId)
+    public function repay($loanId,Request $request,PaymentGatewayContract $paymentGateway)
     {
         //::Only client user can apply loan
         $loan=Loan::findOrFail($loanId);
@@ -124,8 +136,36 @@ class LoanController extends Controller
             return response()->json(['message'=>"Loan request is already $loan->status."], 422);
         }
 
+        //::repay loan amount to admin  using paymentgetway
+         $sender=auth()->user();
+         $reciver=User::whereHas("associatedRole", function ($query) {
+            $query->where('name', 'super-admin');
+        })->first();
+         $paymentDetails=$paymentGateway->charge($loan->principal_amount, $sender,$reciver);
+
+         //::if payment fails
+         if(!$paymentDetails['response']){
+             return response()->json(['message'=>"There is problem to process payment, please try after some time"], 500);
+         }
+
         //::uopdate loan repayment details
-        $loan=Loan::repayLoanAmount($loan);
+        $loan=Loan::repayLoanAmount($loan,$paymentDetails);
         return response()->json(['message'=>'your loan repayment submited successfully!'], 200);
+    }
+
+
+    /**
+     * Get Loan details with installments details
+     * Only respective client or admin can see
+     *
+     * @param $loanId integer
+     */
+    public function show($loanId)
+    {
+        //::Only admin can apply loan
+        $loan=Loan::with('installments')->findOrFail($loanId);
+        $this->authorize('canSeeLoan', [Loan::class,$loan]);
+
+        return response()->json(['message'=>'Loan details fetch successfully!','data'=>$loan], 200);
     }
 }
