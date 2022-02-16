@@ -31,6 +31,9 @@ password: admin
 yarn docker:shell # new tab in console
 composer install
 php artisan migrate:fresh --seed 
+php artisian passport:install
+
+Note: Include passport client token in postman environment 
 ```
 1. your project is ready on url: `http://localhost:8000`
 
