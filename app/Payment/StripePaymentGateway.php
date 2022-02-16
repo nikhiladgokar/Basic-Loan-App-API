@@ -24,14 +24,17 @@ class StripePaymentGateway implements PaymentGatewayContract
            'response' => true,
         ];
 
+        //Ignoring catch in test case as added just static stucture
+        // @codeCoverageIgnoreStart
        }catch (\Exception $e){
-
         return [
             'status' => 'failed', //:: payment status recived form api
             'response' => false,
          ];
 
        }
+    // @codeCoverageIgnoreEnd
+
     }
 
 }
